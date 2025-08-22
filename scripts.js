@@ -44,10 +44,13 @@ function initializeNavigation() {
     const sections = document.querySelectorAll('section[id]');
     window.addEventListener('scroll', function() {
         let current = '';
+        const navbar = document.querySelector('.navbar');
+        const navbarHeight = navbar ? navbar.offsetHeight : 100;
+        
         sections.forEach(section => {
             const sectionTop = section.offsetTop;
             const sectionHeight = section.clientHeight;
-            if (window.scrollY >= (sectionTop - 200)) {
+            if (window.scrollY >= (sectionTop - navbarHeight - 100)) {
                 current = section.getAttribute('id');
             }
         });
@@ -68,7 +71,10 @@ function initializeSmoothScrolling() {
             e.preventDefault();
             const target = document.querySelector(this.getAttribute('href'));
             if (target) {
-                const offsetTop = target.offsetTop - 70; // Account for fixed navbar
+                // Get navbar height dynamically
+                const navbar = document.querySelector('.navbar');
+                const navbarHeight = navbar ? navbar.offsetHeight : 100;
+                const offsetTop = target.offsetTop - navbarHeight;
                 window.scrollTo({
                     top: offsetTop,
                     behavior: 'smooth'
