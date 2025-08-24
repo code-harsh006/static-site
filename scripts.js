@@ -100,282 +100,108 @@ function initializeAnimations() {
         });
     }, observerOptions);
 
-    // Observe elements for animation
-    const animateElements = document.querySelectorAll('.stat-card, .initiative-card, .solution-item, .action-card, .founder-card, .value-item');
-    animateElements.forEach(el => {
+    // Observe elements that should be animated
+    document.querySelectorAll('.feature-card, .solution-item, .stat-card, .team-member, .about-content, .contact-content').forEach(el => {
         observer.observe(el);
-    });
-
-    // Stagger animations for hero stats
-    const heroStats = document.querySelectorAll('.stat-item');
-    heroStats.forEach((stat, index) => {
-        stat.style.animationDelay = `${index * 0.2}s`;
-        stat.classList.add('fade-in-up');
     });
 }
 
 // Counter Animation
 function initializeCounters() {
-    const counters = document.querySelectorAll('.stat-number[data-target]');
-    
     const counterObserver = new IntersectionObserver(function(entries) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                const counter = entry.target;
-                const target = parseInt(counter.getAttribute('data-target'));
-                const duration = 2000; // 2 seconds
-                const increment = target / (duration / 16); // 60fps
-                let current = 0;
-
-                const updateCounter = () => {
-                    current += increment;
-                    if (current < target) {
-                        counter.textContent = Math.floor(current).toLocaleString();
-                        requestAnimationFrame(updateCounter);
-                    } else {
-                        counter.textContent = target.toLocaleString();
+                const counters = entry.target.querySelectorAll('.stat-number');
+                counters.forEach(counter => {
+                    const target = +counter.getAttribute('data-target') || +counter.innerText.replace(/\D/g, '');
+                    if (!isNaN(target)) {
+                        animateCounter(counter, target);
                     }
-                };
-
-                updateCounter();
-                counterObserver.unobserve(counter);
+                });
+                counterObserver.unobserve(entry.target);
             }
         });
     }, { threshold: 0.5 });
 
-    counters.forEach(counter => {
-        counterObserver.observe(counter);
+    document.querySelectorAll('.hero-stats, .impact-stats').forEach(section => {
+        counterObserver.observe(section);
     });
+}
+
+function animateCounter(element, target) {
+    let count = 0;
+    const duration = 2000;
+    const increment = target / (duration / 16);
+    
+    const updateCount = () => {
+        count += increment;
+        if (count < target) {
+            element.innerText = Math.ceil(count) + (element.innerText.includes('+') ? '+' : '');
+            requestAnimationFrame(updateCount);
+        } else {
+            element.innerText = target + (element.innerText.includes('+') ? '+' : '');
+        }
+    };
+    
+    updateCount();
 }
 
 // Contact Form Handling
 function initializeContactForm() {
     const contactForm = document.getElementById('contactForm');
-    
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Get form data
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
+            // Form validation
+            const inputs = contactForm.querySelectorAll('input, textarea');
+            let isValid = true;
             
-            // Basic validation
-            if (!data.name || !data.email || !data.message) {
-                showNotification('Please fill in all required fields.', 'error');
-                return;
-            }
-
-            // Email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(data.email)) {
-                showNotification('Please enter a valid email address.', 'error');
-                return;
-            }
-
-            // Simulate form submission
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
-            submitButton.textContent = 'Sending...';
-            submitButton.disabled = true;
-
-            // Simulate API call
-            setTimeout(() => {
-                showNotification('Thank you for your message! We\'ll get back to you soon.', 'success');
-                this.reset();
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            }, 2000);
-        });
-
-        // Form field animations
-        const formFields = contactForm.querySelectorAll('input, select, textarea');
-        formFields.forEach(field => {
-            field.addEventListener('focus', function() {
-                this.parentElement.classList.add('focused');
-            });
-
-            field.addEventListener('blur', function() {
-                if (!this.value) {
-                    this.parentElement.classList.remove('focused');
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.style.borderColor = '#ef4444';
+                } else {
+                    input.style.borderColor = '';
                 }
             });
+            
+            if (isValid) {
+                // Form submission logic would go here
+                alert('Thank you for your message! We will get back to you soon.');
+                contactForm.reset();
+            } else {
+                alert('Please fill in all required fields.');
+            }
         });
     }
 }
 
 // Scroll Effects
 function initializeScrollEffects() {
-    // Parallax effect for hero section
     window.addEventListener('scroll', function() {
-        const scrolled = window.pageYOffset;
+        const scrollPosition = window.scrollY;
+        
+        // Parallax effect for hero section
         const hero = document.querySelector('.hero');
         if (hero) {
-            hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+            hero.style.backgroundPositionY = `${scrollPosition * 0.5}px`;
         }
     });
-
-    // Reveal animations on scroll
-    const revealElements = document.querySelectorAll('.section-header, .about-text, .founders-section');
-    
-    const revealObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, { threshold: 0.3 });
-
-    revealElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        revealObserver.observe(el);
-    });
 }
 
-// Notification System
-function showNotification(message, type = 'info') {
-    // Remove existing notifications
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(notification => notification.remove());
-
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span class="notification-message">${message}</span>
-            <button class="notification-close">&times;</button>
-        </div>
-    `;
-
-    // Add styles
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        padding: 16px 20px;
-        border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        z-index: 10000;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        max-width: 400px;
-    `;
-
-    // Add to page
-    document.body.appendChild(notification);
-
-    // Animate in
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
-
-    // Close button functionality
-    const closeButton = notification.querySelector('.notification-close');
-    closeButton.addEventListener('click', () => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => notification.remove(), 300);
-    });
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.transform = 'translateX(100%)';
-            setTimeout(() => notification.remove(), 300);
-        }
-    }, 5000);
-}
-
-// Utility Functions
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Performance optimization for scroll events
-const optimizedScrollHandler = debounce(function() {
-    // Scroll-based animations and effects
-}, 16); // ~60fps
-
-window.addEventListener('scroll', optimizedScrollHandler);
-
-// Add loading animation
-window.addEventListener('load', function() {
-    document.body.classList.add('loaded');
-    
-    // Remove loading screen if exists
-    const loader = document.querySelector('.loader');
-    if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.remove(), 500);
-    }
-});
-
-// Add CSS for notifications
-const notificationStyles = document.createElement('style');
-notificationStyles.textContent = `
-    .notification-content {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-    }
-    
-    .notification-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 0;
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: background-color 0.2s ease;
-    }
-    
-    .notification-close:hover {
-        background: rgba(255, 255, 255, 0.2);
-    }
-    
-    .form-group.focused label {
-        transform: translateY(-20px);
-        font-size: 0.875rem;
-        color: var(--primary-color);
-    }
-    
-    .nav-link.active {
-        color: var(--primary-color);
-    }
-    
-    .nav-link.active::after {
-        width: 100%;
-    }
-    
-    body.loaded {
-        opacity: 1;
-    }
-    
-    body {
+// Add CSS for fade-in animations
+const style = document.createElement('style');
+style.textContent = `
+    .fade-in-up {
         opacity: 0;
-        transition: opacity 0.3s ease;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    
+    .fade-in-up.fade-in-up {
+        opacity: 1;
+        transform: translateY(0);
     }
 `;
-
-document.head.appendChild(notificationStyles);
+document.head.appendChild(style);
